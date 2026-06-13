@@ -1,5 +1,4 @@
 # MadOutLegacy
----
 
 BepInEx плагин для Steam-версии игры **MadOut2 BigCityOnline**, полностью восстанавливающий онлайн и офлайн функционал
 
