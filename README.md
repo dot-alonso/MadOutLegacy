@@ -28,7 +28,7 @@ For earlier versions (`4.9` - `9.2`), Compatibility Mode is available. It provid
 
 ## Installation
 
-* Download the latest **original** version of the game from Steam, or from (here)[https://github.com/dot-alonso/MadOutLegacy/wiki/Download-original-game-versions].
+* Download the latest **original** version of the game from Steam, or from [here](https://github.com/dot-alonso/MadOutLegacy/wiki/Download-original-game-versions).
 * Install BepInEx 5 into the game folder and launch the game once.
 * Download the zip file from the Releases section and extract it into the game root folder.
 
