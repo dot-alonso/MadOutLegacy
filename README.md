@@ -1,6 +1,6 @@
 # MadOutLegacy
 
-#### [README на Русском](https://github.com/dot-alonso/MadOutSteamRestore/blob/main/readme-RU.md)
+## [README на Русском](https://github.com/dot-alonso/MadOutSteamRestore/blob/main/readme-RU.md)
 
 ---
 
