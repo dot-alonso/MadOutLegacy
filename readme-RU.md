@@ -24,7 +24,7 @@ BepInEx плагин для Steam-версии игры **MadOut2 BigCityOnline*
 
 ## Установка
 
-* Скачайте посделнюю **оригинальную** версию игры из Steam (или (здесь)[https://github.com/dot-alonso/MadOutLegacy/wiki/Download-original-game-versions])
+* Скачайте посделнюю **оригинальную** версию игры из Steam, или (здесь)[https://github.com/dot-alonso/MadOutLegacy/wiki/Download-original-game-versions]
 * Установите BepInEx 5 в папку с игрой и запустите игру 1 раз
 * Скачайте zip файл из раздела Releases и распакуйте в корневую папку игры
 
