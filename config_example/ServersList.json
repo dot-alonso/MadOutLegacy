@@ -31,7 +31,8 @@
       "serverMode": "Race",
       "onlineProtocolVersion": 93,
       "includeInAuto": true,
-      "showIfOffline": false
+      "showIfOffline": false,
+      "self": true
     }
   ]
 }

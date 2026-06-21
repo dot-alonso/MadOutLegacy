@@ -33,6 +33,7 @@ internal static class LegacyPatchManager
         PatchClass(typeof(NetUIPatches));
         PatchClass(typeof(NetworkPatches));
         PatchClass(typeof(RaceAndWorldPatches));
+        PatchClass(typeof(RuntimeQualityAndCursorPatches));
     }
 
     private static void PatchCompatibilityMode()

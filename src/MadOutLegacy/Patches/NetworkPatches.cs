@@ -21,7 +21,6 @@ internal static class NetworkPatches
     {
         NetManagerTools.UpdateCommandLines();
         LegacyCommandLine.UpdateFromArgs();
-        LegacyDebugOverlay.InitIfNeeded();
     }
 
     [HarmonyPatch(typeof(NetManager), "RunServer")]
@@ -68,6 +67,7 @@ internal static class NetworkPatches
         }
         NetManager.me.gameObject.GetOrAddComponent<NetManagerTools>();
         LegacyServerConsole.CreateIfNeeded();
+        LegacyNearestPointRespawn.TryLoad();
         LegacyMasterServer.AttachIfNeeded(NetManager.me.gameObject);
         if (!LegacyEventsConfig.TryLoadAndBuild() && __instance.loadEventsMap)
         {

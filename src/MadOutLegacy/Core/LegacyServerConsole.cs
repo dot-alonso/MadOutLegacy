@@ -401,7 +401,8 @@ public sealed class LegacyServerConsole : MonoBehaviour
             || stackTrace.IndexOf("System.TermInfoReader") != -1
             || message.IndexOf("UnloadAsset can only be used on assets") != -1
             || message.IndexOf("Windows Unity.BatchModeWindow hidden") != -1
-            || message.IndexOf("Parce:-masterServer") != -1 ;
+            || message.IndexOf("Parce:-masterServer") != -1
+            || message.IndexOf("FileBlocks_Loader. Fail to stop thread") != -1;
     }
 
     private static void TryPrintServerReadyStatus(string message)

@@ -48,6 +48,10 @@ For earlier versions (`4.9` - `9.2`), Compatibility Mode is available. It provid
 dotnet build -c Release -p:GameDir="path\to\game\dir" -p:CopyToPlugins=true
 ```
 
+## Thanks
+
+To [zzest()](https://github.com/zzest-dev) for helping with respawn points.
+
 ## Terms and Conditions
 
 1. This project is distributed under the MIT License and requires compliance with its terms.

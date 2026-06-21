@@ -15,7 +15,17 @@ internal static class NetConnectAndControlPatches
     private static bool NetConnect_CmdSetPrivateID_Prefix(NetConnect __instance, string setPrivateID, string setNikName, string setPlayerXml, RuntimePlatform platform)
     {
         __instance.privateGUID = setPrivateID;
-        __instance.nikName = NetManagerTools.RemoveRitchText(setNikName);
+
+        string originalNikName = setNikName;
+        string sanitizedNikName = LegacyServerLimits.SanitizeNikName(setNikName);
+
+        __instance.nikName = sanitizedNikName;
+
+        //LegacyServerLimits.LogNicknameWasSanitized(
+        //    originalNikName,
+        //    sanitizedNikName,
+        //    "Cmd_SetPrivateID / initial connect"
+        //);
         if (NetManager.isLogType(NetManager.mLogType.Info))
         {
             Debug.Log("Player: " + __instance.nikName + " guid: " + __instance.privateGUID + " PlayerXml: " + setPlayerXml);
@@ -30,6 +40,45 @@ internal static class NetConnectAndControlPatches
             return false;
         }
         return true;
+    }
+
+    [HarmonyPatch(typeof(NetInputControl), "Cmd_InitNikName")]
+    [HarmonyPrefix]
+    private static void NetInputControl_CmdInitNikName_Prefix(NetInputControl __instance, ref string set, string reasone)
+    {
+        if (!NetManager.isServer)
+        {
+            return;
+        }
+
+        string originalNikName = set;
+        set = LegacyServerLimits.SanitizeNikName(set);
+
+        //LegacyServerLimits.LogNicknameWasSanitized(
+        //    originalNikName,
+        //    set,
+        //    "Cmd_InitNikName" + (string.IsNullOrEmpty(reasone) ? string.Empty : " / " + reasone)
+        //);
+    }
+
+    [HarmonyPatch(typeof(NetInputControl), "DeliveryCar")]
+    [HarmonyPrefix]
+    private static bool NetInputControl_DeliveryCar_Prefix(NetInputControl __instance, string fileName)
+    {
+        if (!NetManager.isServer)
+        {
+            return true;
+        }
+
+        int currentCars;
+
+        if (LegacyServerLimits.CanSpawnNetworkCar(out currentCars))
+        {
+            return true;
+        }
+
+        //LegacyServerLimits.LogCarLimitReached(__instance, fileName, currentCars);
+        return false;
     }
 
     [HarmonyPatch(typeof(NetConnect), "InitInputControl")]
@@ -246,6 +295,48 @@ internal static class NetConnectAndControlPatches
         {
             Debug.LogError("NetControl.CreateByName failed: smoothSync is null, objName: " + __instance.objName, __instance);
         }
+        return false;
+    }
+
+    [HarmonyPatch(typeof(NetSpawn), "CheckOnDead_OnServer")]
+    [HarmonyPrefix]
+    private static bool NetSpawn_CheckOnDeadOnServer_Prefix(NetSpawn __instance)
+    {
+        if (!LegacyNearestPointRespawn.IsReady)
+        {
+            return true;
+        }
+
+        if (__instance == null || __instance.netInput == null || __instance.netInput.input == null)
+        {
+            return true;
+        }
+
+        PlayerControl currentPlayer = __instance.netInput.input.currentPlayer;
+        if (!currentPlayer || !currentPlayer.isDead || nTime.GameThisFrame - currentPlayer.timeLiveZero <= 2600f)
+        {
+            return false;
+        }
+
+        Control currentOrParent = __instance.netInput.input.currentOrParent;
+        Vector3 currentPlayerPos = currentOrParent ? currentOrParent.body_pos : currentPlayer.body_pos;
+
+        Vector3 spawnPos;
+        if (!LegacyNearestPointRespawn.TryGetNearestRespawnPoint(currentPlayerPos, out spawnPos))
+        {
+            return true;
+        }
+
+        Quaternion identity = Quaternion.identity;
+        Net_BaseEvent.isNeedAutoRespaumWhenDeadStatic(__instance.netInput, ref spawnPos, ref identity);
+        __instance.Spawn(spawnPos, identity, true, true);
+        return false;
+    }
+
+    [HarmonyPatch(typeof(Nuligine), "SpeedHukDetected")]
+    [HarmonyPrefix]
+    private static bool SpeedHukDetected_Prefix()
+    {
         return false;
     }
 }

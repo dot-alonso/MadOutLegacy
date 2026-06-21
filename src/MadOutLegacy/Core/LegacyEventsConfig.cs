@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using UnityEngine;
@@ -150,7 +151,7 @@ public class LegacyEventsConfig
 		}
 		gameObject.AddComponent<EventsList>().savePostfix = savePostfix;
 		gameObject.SetActive(true);
-		Debug.Log("Mod events list created: " + savePostfix + ", count: " + num.ToString());
+		Debug.Log("Events list created: " + savePostfix + ", count: " + num.ToString());
 	}
 
 	private static Transform CreateEventMap(LegacyEventsConfig.EventDef def, string savePostfix, int index)
@@ -400,7 +401,7 @@ public class LegacyEventsConfig
 		if (raceDirection)
 		{
 			LegacyEventsConfig.cachedRacePointTemplate = raceDirection;
-			Debug.Log("ModEvents: race checkpoint template found in RaceObjects: " + LegacyEventsConfig.GetTransformPath(raceDirection.transform));
+			Debug.Log("Events: race checkpoint template found in RaceObjects: " + LegacyEventsConfig.GetTransformPath(raceDirection.transform));
 			return LegacyEventsConfig.cachedRacePointTemplate;
 		}
 		RaceDirection[] array = Resources.FindObjectsOfTypeAll<RaceDirection>();
@@ -425,11 +426,11 @@ public class LegacyEventsConfig
 		LegacyEventsConfig.cachedRacePointTemplate = raceDirection2;
 		if (raceDirection2)
 		{
-			Debug.Log("ModEvents: race checkpoint template found: " + LegacyEventsConfig.GetTransformPath(raceDirection2.transform) + ", score: " + num.ToString());
+			Debug.Log("Events: race checkpoint template found: " + LegacyEventsConfig.GetTransformPath(raceDirection2.transform) + ", score: " + num.ToString());
 		}
 		else
 		{
-			Debug.LogWarning("ModEvents: race checkpoint template was not found. Fallback checkpoint will be used.");
+			Debug.LogWarning("Events: race checkpoint template was not found.");
 		}
 		return LegacyEventsConfig.cachedRacePointTemplate;
 	}
@@ -621,16 +622,283 @@ public class LegacyEventsConfig
 		}
 		if (raceDirection)
 		{
-			Debug.Log("ModEvents: loaded RaceObjects resources: " + array.Length.ToString() + ", best checkpoint score: " + num.ToString());
+			Debug.Log("Events: loaded RaceObjects resources: " + array.Length.ToString() + ", best checkpoint score: " + num.ToString());
 		}
 		else
 		{
-			Debug.LogWarning("ModEvents: RaceObjects resources loaded, but checkpoint template was not found. Resources count: " + array.Length.ToString());
+			Debug.LogWarning("Events: RaceObjects resources loaded, but checkpoint template was not found. Resources count: " + array.Length.ToString());
 		}
 		return raceDirection;
 	}
 
-	private static bool wasTried;
+    //internal static RaceDirection SpawnDebugRaceCheckpoint(Vector3 pos, float yaw = 0f, float radius = 8f)
+    //{
+    //    return LegacyEventsConfig.SpawnDebugRaceCheckpoint(pos, yaw, radius);
+    //}
+
+    internal static RaceDirection SpawnDebugRaceCheckpoint(Vector3 pos, bool isInteractive, float yaw = 0f, float radius = 8f)
+    {
+        if (NetManager.isServer)
+        {
+            LegacyEventsConfig.LogDebugCheckpointWarning("Debug checkpoint spawn is client-only. Ignored on server.");
+            return null;
+        }
+
+        if (!LegacyEventsConfig.debugCheckpointRoot)
+        {
+            LegacyEventsConfig.debugCheckpointRoot = new GameObject("MadOutLegacy_DebugRaceCheckpoints");
+            global::UnityEngine.Object.DontDestroyOnLoad(LegacyEventsConfig.debugCheckpointRoot);
+        }
+
+        if (!LegacyEventsConfig.cachedRacePointTemplate)
+        {
+            LegacyEventsConfig.racePointTemplateSearchDone = false;
+        }
+
+        RaceDirection template = LegacyEventsConfig.GetRacePointTemplate();
+
+        if (!template)
+        {
+            LegacyEventsConfig.LogDebugCheckpointWarning("Debug checkpoint was not spawned: race checkpoint template was not found.");
+            return null;
+        }
+
+        int index = LegacyEventsConfig.debugCheckpointIndex++;
+
+        RaceDirection raceDirection = LegacyEventsConfig.CreateRacePointFromTemplate(
+            template,
+            LegacyEventsConfig.debugCheckpointRoot.transform,
+            pos,
+            new Vector3(0f, yaw, 0f),
+            radius,
+            index
+        );
+
+        if (!raceDirection)
+        {
+            LegacyEventsConfig.LogDebugCheckpointWarning("Debug checkpoint was not spawned: failed to instantiate checkpoint template.");
+            return null;
+        }
+
+        GameObject gameObject = raceDirection.gameObject;
+
+        gameObject.name = "DebugRaceCheckpoint_" + index.ToString("00");
+        gameObject.transform.position = pos;
+        gameObject.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+
+        raceDirection.next = null;
+        raceDirection.racePoints = null;
+        raceDirection.takeCallBack = null;
+
+        if (raceDirection.ourPoint)
+        {
+            raceDirection.ourPoint.enabled = false;
+        }
+
+		if (!isInteractive)
+		{
+            LegacyEventsConfig.DisableDebugCheckpointColliders(gameObject);
+        }
+
+        gameObject.SetActive(true);
+
+        LegacyEventsConfig.ForceDebugCheckpointVisual(raceDirection, pos, yaw);
+
+        LegacyEventsConfig.debugCheckpoints.Add(raceDirection);
+
+        LegacyEventsConfig.LogDebugCheckpointInfo("Debug race checkpoint spawned at " + pos.ToString() + ", yaw: " + yaw.ToString());
+
+        return raceDirection;
+    }
+
+    private static void ForceDebugCheckpointVisual(RaceDirection raceDirection, Vector3 pos, float yaw)
+    {
+        if (!raceDirection)
+        {
+            return;
+        }
+
+        GameObject gameObject = raceDirection.gameObject;
+
+        if (!raceDirection.nextPosMiniMapIcon)
+        {
+            raceDirection.nextPosMiniMapIcon = LegacyEventsConfig.CreateChildTransform(gameObject.transform, "NextPosMiniMapIcon");
+        }
+
+        raceDirection.nextPosMiniMapIcon.position = pos;
+        raceDirection.nextPosMiniMapIcon.rotation = Quaternion.Euler(0f, yaw, 0f);
+        raceDirection.nextPosMiniMapIcon.gameObject.SetActive(true);
+
+        MiniMap_Icon miniMapIcon = raceDirection.nextPosMiniMapIcon.GetComponent<MiniMap_Icon>();
+
+        if (miniMapIcon)
+        {
+            miniMapIcon.customTransfrom = raceDirection.transform;
+            miniMapIcon.infoText = "Debug checkpoint";
+            miniMapIcon.ShowTextOnMap = true;
+            miniMapIcon.RestartIcon();
+        }
+
+        TargetPointer targetPointer = raceDirection.nextPosMiniMapIcon.GetComponent<TargetPointer>();
+
+        if (targetPointer)
+        {
+            targetPointer.customTarget = raceDirection.transform;
+            targetPointer.enabled = true;
+        }
+    }
+
+    private static void DisableDebugCheckpointColliders(GameObject gameObject)
+    {
+        if (!gameObject)
+        {
+            return;
+        }
+
+        Collider[] componentsInChildren = gameObject.GetComponentsInChildren<Collider>(true);
+
+        for (int i = 0; i < componentsInChildren.Length; i++)
+        {
+            if (componentsInChildren[i])
+            {
+                componentsInChildren[i].enabled = false;
+            }
+        }
+    }
+
+    internal static void ClearDebugRaceCheckpoints()
+    {
+        if (LegacyEventsConfig.debugCheckpointRoot)
+        {
+            global::UnityEngine.Object.Destroy(LegacyEventsConfig.debugCheckpointRoot);
+            LegacyEventsConfig.debugCheckpointRoot = null;
+        }
+
+        LegacyEventsConfig.debugCheckpoints.Clear();
+        LegacyEventsConfig.debugCheckpointIndex = 0;
+        LegacyEventsConfig.LogDebugCheckpointInfo("Debug race checkpoints cleared.");
+    }
+    internal static bool RemoveDebugRaceCheckpoint(Vector3 expectedPos)
+    {
+        const float warnDistance = 3f;
+
+        if (!LegacyEventsConfig.debugCheckpointRoot)
+        {
+            LegacyEventsConfig.LogDebugCheckpointWarning("Debug checkpoint remove failed: debug checkpoint root was not found.");
+            return false;
+        }
+
+        RaceDirection checkpoint = LegacyEventsConfig.PopLastDebugCheckpoint();
+
+        if (!checkpoint)
+        {
+            LegacyEventsConfig.LogDebugCheckpointWarning("Debug checkpoint remove failed: no debug checkpoints found.");
+            return false;
+        }
+
+        string checkpointName = checkpoint.gameObject.name;
+        Vector3 checkpointPos = checkpoint.transform.position;
+        float distance = Vector3.Distance(checkpointPos, expectedPos);
+
+        if (distance > warnDistance)
+        {
+            LegacyEventsConfig.LogDebugCheckpointWarning(
+                "Debug checkpoint remove position mismatch: removing last spawned checkpoint " +
+                checkpointName +
+                " at " + checkpointPos.ToString() +
+                ", requested: " + expectedPos.ToString() +
+                ", distance: " + distance.ToString("0.###")
+            );
+        }
+
+        global::UnityEngine.Object.Destroy(checkpoint.gameObject);
+
+        LegacyEventsConfig.LogDebugCheckpointInfo(
+            "Debug race checkpoint removed: " + checkpointName +
+            " at " + checkpointPos.ToString() +
+            ", requested: " + expectedPos.ToString()
+        );
+
+        return true;
+    }
+
+    private static RaceDirection PopLastDebugCheckpoint()
+    {
+        for (int i = LegacyEventsConfig.debugCheckpoints.Count - 1; i >= 0; i--)
+        {
+            RaceDirection checkpoint = LegacyEventsConfig.debugCheckpoints[i];
+            LegacyEventsConfig.debugCheckpoints.RemoveAt(i);
+
+            if (checkpoint)
+            {
+                return checkpoint;
+            }
+        }
+
+        RaceDirection[] checkpoints = LegacyEventsConfig.debugCheckpointRoot
+            ? LegacyEventsConfig.debugCheckpointRoot.GetComponentsInChildren<RaceDirection>(true)
+            : null;
+
+        if (checkpoints == null || checkpoints.Length == 0)
+        {
+            return null;
+        }
+
+        RaceDirection bestCheckpoint = null;
+        int bestIndex = -1;
+
+        for (int i = 0; i < checkpoints.Length; i++)
+        {
+            RaceDirection checkpoint = checkpoints[i];
+
+            if (!checkpoint || !checkpoint.gameObject)
+            {
+                continue;
+            }
+
+            string name = checkpoint.gameObject.name;
+            const string prefix = "DebugRaceCheckpoint_";
+
+            int index = -1;
+
+            if (name != null && name.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                int.TryParse(name.Substring(prefix.Length), out index);
+            }
+
+            if (index >= bestIndex)
+            {
+                bestIndex = index;
+                bestCheckpoint = checkpoint;
+            }
+        }
+
+        return bestCheckpoint;
+    }
+
+    private static void LogDebugCheckpointInfo(string message)
+    {
+        if (MadOutLegacyPlugin.Log != null)
+        {
+            MadOutLegacyPlugin.Log.LogInfo(message);
+            return;
+        }
+
+        Debug.Log(message);
+    }
+
+    private static void LogDebugCheckpointWarning(string message)
+    {
+        if (MadOutLegacyPlugin.Log != null)
+        {
+            MadOutLegacyPlugin.Log.LogWarning(message);
+            return;
+        }
+
+        Debug.LogWarning(message);
+    }
+
+    private static bool wasTried;
 
 	private static bool isReady;
 
@@ -642,7 +910,13 @@ public class LegacyEventsConfig
 
 	private static bool racePointTemplateSearchDone;
 
-	[Serializable]
+    private static GameObject debugCheckpointRoot;
+
+    private static readonly List<RaceDirection> debugCheckpoints = new List<RaceDirection>();
+
+    private static int debugCheckpointIndex;
+
+    [Serializable]
 	public class Config
 	{
 		public int version;

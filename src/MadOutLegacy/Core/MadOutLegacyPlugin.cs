@@ -7,8 +7,8 @@ public sealed class MadOutLegacyPlugin : BaseUnityPlugin
 {
     public const string PluginGuid = "com.alonso.madoutlegacy";
     public const string PluginName = "MadOutLegacy";
-    public const string ModVersion = "1.2";
-    public const string ModVersionName = "1.2";
+    public const string ModVersion = "1.2.1";
+    public const string ModVersionName = "1.2.1";
 
     internal static ManualLogSource Log;
     internal static Harmony Harmony;
@@ -47,10 +47,6 @@ public sealed class MadOutLegacyPlugin : BaseUnityPlugin
 
     private void Update()
     {
-        if (LegacyCompatibility.IsFullMode)
-        {
-            LegacyDebugOverlay.InitIfNeeded();
-        }
         LegacyHotkeys.Update();
     }
 

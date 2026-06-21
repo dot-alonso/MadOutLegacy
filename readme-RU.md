@@ -44,6 +44,9 @@ BepInEx плагин для Steam-версии игры **MadOut2 BigCityOnline*
 dotnet build -c Release -p:GameDir="path\to\game\dir" -p:CopyToPlugins=true
 ```
 
+## Благодарности
+
+[zzest()](https://github.com/zzest-dev) за помощь с точками респавна.
 
 ## Условия и положения
 

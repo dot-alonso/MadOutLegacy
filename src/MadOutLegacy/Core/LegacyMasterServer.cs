@@ -73,7 +73,7 @@ public class LegacyMasterServer : MonoBehaviour
 
 	private void LoadAndStart()
 	{
-		this.configPath = LegacyMasterServer.GetConfigPath();
+		this.configPath = LegacyHelpers.GetJsonPath("-serversList", "ServersList.json");
 		bool flag = !File.Exists(this.configPath);
 		if (flag)
 		{
@@ -154,39 +154,6 @@ public class LegacyMasterServer : MonoBehaviour
 			Debug.LogError("Failed to start master server: " + ex.ToString());
 			base.enabled = false;
 		}
-	}
-
-	private static string GetConfigPath()
-	{
-		ArgParcer.ArgValue argValue = ArgParcer.GetArgValue("-serversList");
-		bool flag = argValue != null && argValue.isExists && !string.IsNullOrEmpty(argValue.strValue);
-		string text;
-		if (flag)
-		{
-			text = argValue.strValue;
-		}
-		else
-		{
-			string text2 = LegacyHelpers.GameRoot;
-			try
-			{
-				bool flag2 = !string.IsNullOrEmpty(Application.dataPath);
-				if (flag2)
-				{
-					DirectoryInfo parent = Directory.GetParent(Application.dataPath);
-					bool flag3 = parent != null;
-					if (flag3)
-					{
-						text2 = parent.FullName;
-					}
-				}
-			}
-			catch
-			{
-			}
-			text = Path.Combine(Path.Combine(text2, "MadOutLegacy"), "ServersList.json");
-		}
-		return text;
 	}
 
 	private static void TryCreateExampleConfig(string path)

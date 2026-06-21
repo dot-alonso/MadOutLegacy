@@ -5,7 +5,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>MadOutLegacy</AssemblyName>
 	<Authors>.alonso</Authors>
-	<VersionPrefix>1.2-rc1</VersionPrefix>
+	<VersionPrefix>1.2.1</VersionPrefix>
     <RootNamespace>MadOutLegacy</RootNamespace>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -15,10 +15,10 @@
     <CopyToPlugins Condition="'$(CopyToPlugins)' == ''">false</CopyToPlugins>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <NoWarn>1701;1702;0618</NoWarn>
+    <NoWarn>1701;1702;0618;0649</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <NoWarn>1701;1702;0618</NoWarn>
+    <NoWarn>1701;1702;0618;0649</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

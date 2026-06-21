@@ -25,6 +25,8 @@ internal static class LegacyCommandLine
         BindToSpecificIP = !string.IsNullOrEmpty(BindIP) || HasArg("-bindToIP") || HasArg("-bindSpecificIP");
         AutoConnectFromArgs = !string.IsNullOrEmpty(ConnectIP) && ConnectPort > 0;
 
+        LegacyServerLimits.UpdateFromArgs(args);
+
         if (AutoConnectFromArgs)
         {
             Debug.Log("MadOutLegacy direct connect from args: " + ConnectIP + ":" + ConnectPort.ToString());
