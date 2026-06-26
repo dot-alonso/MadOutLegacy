@@ -339,4 +339,33 @@ internal static class NetConnectAndControlPatches
     {
         return false;
     }
+
+    [HarmonyPatch(typeof(PlayerPhysics), "can_catapulta_do", MethodType.Getter)]
+    [HarmonyPrefix]
+    private static bool PlayerPhysics_can_catapulta_do_Prefix(PlayerPhysics __instance, ref bool __result)
+    {
+        if (__instance == null || __instance.player == null)
+        {
+            return true;
+        }
+
+        try
+        {
+
+            bool isInCar = __instance.player.InCar != null && __instance.player.InCar.carState == PlayerInCar.CarState.InCar;
+            bool hasSitData = __instance.player.enterTo != null && __instance.player.enterTo.sit_data != null;
+            if (isInCar && hasSitData)
+            {
+                __result = true; 
+                return false; 
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("Error in Catapult Prefix Patch: " + ex.Message);
+            return true; 
+        }
+
+        return true;
+    }
 }
