@@ -368,4 +368,17 @@ internal static class NetConnectAndControlPatches
 
         return true;
     }
+
+    [HarmonyPatch(typeof(NetManagerTools), "FindColorForUser")]
+    [HarmonyPrefix]
+    private static bool NetManagerTools_FindColorForUser_Prefix(NetInputControl netInput, ref Color __result)
+    {
+        float hue = UnityEngine.Random.Range(0f, 1f);
+        float saturation = 0.8f;
+        float value = 0.9f;
+
+        __result = Color.HSVToRGB(hue, saturation, value);
+        return false; 
+    }
+
 }
